@@ -1,1 +1,1 @@
-# la-boleria-api
+A cake restaurant API using Node, Express and PostgreSQL as database
