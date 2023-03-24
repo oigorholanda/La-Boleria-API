@@ -101,3 +101,22 @@ export async function getOrdersById(req, res) {
    }
 }
 
+export async function updateOrder(req, res) {
+  const { id } = req.params;
+  
+  try {
+    if (id) {
+      const orderExists = await db.query('SELECT id FROM orders WHERE "id" = $1', [id]);
+      if (orderExists.rowCount === 0) return res.status(404).send('Pedido não encontrado');
+
+      await db.query(`UPDATE orders SET "isdelivered" = true WHERE id =$1`, [id]);
+      
+      res.status(204).send('Pedido entregue');
+
+    } else {
+      res.status(400).send('Informe o ID do pedido!');
+    }
+  } catch (error) {
+     res.status(500).send(`Internal Server Error! ${error.message}`);
+  }
+}
