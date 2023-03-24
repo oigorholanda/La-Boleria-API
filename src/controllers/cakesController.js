@@ -5,7 +5,7 @@ export async function postCake(req, res) {
 
    try {
       const duplicateCake = await db.query('SELECT id FROM cakes WHERE "name" = $1', [name]);
-      if (duplicateCake.rowCount !== 0) return res.sendStatus(409);
+      if (duplicateCake.rowCount !== 0) return res.status(409).send('Nome já cadastrado, por favor escolha outro');
 
       await db.query(`
       INSERT INTO cakes (name, price, image, description)
@@ -28,7 +28,7 @@ export async function getCakes(req, res) {
    }
 }
 
-// query para saber o nome das colunas da tabela
+// query para retornar o nome das colunas da tabela
 // db.query(`
 //       SELECT column_name, data_type, character_maximum_length
 //       FROM information_schema.columns

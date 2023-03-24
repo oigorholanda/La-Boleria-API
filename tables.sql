@@ -20,6 +20,7 @@ CREATE TABLE orders (
     quantity INTEGER NOT NULL DEFAULT 0,
     createdAt TIMESTAMP NOT NULL,
     totalPrice NUMERIC(10,2) NOT NULL,
+    isDelivered BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (clientId) REFERENCES clients (id),
     FOREIGN KEY (cakeId) REFERENCES cakes (id)
 );
