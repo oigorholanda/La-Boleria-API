@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { db } from "../database/database.js";
 
 export async function postOrder(req, res) {
@@ -5,10 +6,10 @@ export async function postOrder(req, res) {
 
    try {
     const clientExists = await db.query('SELECT id FROM clients WHERE "id" = $1', [clientId]);
-    if (clientExists.rowCount !== 0) return res.sendStatus(404);
+    if (clientExists.rowCount === 0) return res.status(404).send('Cliente não encontrado');
 
     const cakeExists = await db.query('SELECT id FROM cakes WHERE "id" = $1', [cakeId]);
-    if (cakeExists.rowCount !== 0) return res.sendStatus(404);
+    if (cakeExists.rowCount === 0) return res.status(404).send('Produto não encontrado');
 
     const createdAt = dayjs().format();
 
@@ -20,21 +21,83 @@ export async function postOrder(req, res) {
    }
 }
 
-export async function getClients(req, res) {
-    // const duplicateCake = await db.query('SELECT id FROM cakes WHERE "name" = $1', [name]);
-    // if (duplicateCake.rowCount !== 0) return res.sendStatus(409);
+export async function getOrders(req, res) {
+    const { date } = req.query;
+
+    let query = `
+    SELECT o.id, o."createdat", o.quantity, o."totalprice", o."isdelivered",
+      json_build_object(
+        'id', cl.id,
+        'name', cl.name, 
+        'address', cl.address, 
+        'phone', cl.phone) AS client,
+      json_build_object(
+        'id', c.id,
+        'name', c.name, 
+        'price', c.price,
+        'description', c.description, 
+        'image', c.image
+        ) AS cake
+      FROM orders o
+      INNER JOIN clients cl on o.clientid = cl.id
+      INNER JOIN cakes c on o.cakeid = c.id
+    `
 
    try {
-      const data = await db.query(`SELECT * FROM clients`);
-      res.status(201).send(data.rows);
+    if (date) {
+        const data = await db.query(`
+          ${query}
+          WHERE o."createdAt"::date = DATE($1)`,
+          [date]
+        );
+        res.status(200).send(data.rows);
+      } else {
+        const data = await db.query(query);
+        res.status(200).send(data.rows);
+      }
+      
    } catch (error) {
       res.status(500).send(`Internal Server Error! ${error.message}`);
    }
 }
 
-// query para retornar o nome das colunas da tabela
-// db.query(`
-//   SELECT column_name, data_type, character_maximum_length
-//   FROM information_schema.columns
-//   WHERE table_name = 'orders';
-//   `);
+export async function getOrdersById(req, res) {
+    const { id } = req.params;
+
+    let query = `
+    SELECT o.id, o."createdat", o.quantity, o."totalprice", o."isdelivered",
+      json_build_object(
+        'id', cl.id,
+        'name', cl.name, 
+        'address', cl.address, 
+        'phone', cl.phone) AS client,
+      json_build_object(
+        'id', c.id,
+        'name', c.name, 
+        'price', c.price,
+        'description', c.description, 
+        'image', c.image
+        ) AS cake
+      FROM orders o
+      INNER JOIN clients cl on o.clientid = cl.id
+      INNER JOIN cakes c on o.cakeid = c.id
+    `
+
+   try {
+    if (id) {
+        const data = await db.query(`
+          ${query}
+          WHERE o.id = $1`,
+          [id]
+        );
+        res.status(200).send(data.rows);
+      } else {
+        
+        res.status(404).send('Informe o ID!');
+      }
+      
+   } catch (error) {
+      res.status(500).send(`Internal Server Error! ${error.message}`);
+   }
+}
+
