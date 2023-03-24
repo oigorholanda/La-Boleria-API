@@ -31,19 +31,19 @@ export async function getClientsById(req, res) {
    const { id } = req.params;
 
    try {
-      const clientExists = await db.query('SELECT id FROM clients WHERE "id" = $1', [clientId]);
+      const clientExists = await db.query('SELECT id FROM clients WHERE "id" = $1', [id]);
       if (clientExists.rowCount === 0) return res.status(404).send("Cliente não encontrado");
 
       const data = await db.query(`
-      SELECT  o.id,
-            o."createdAt",
+      SELECT  o.id AS "orderId",
+            o."createdat",
             o.quantity, 
-            o."totalPrice",
-            o."isDelivered",
+            o."totalprice",
+            o."isdelivered",
             c.name "cakeName"
       FROM clients cl 
       JOIN orders o ON o."clientid" = cl.id
-      JOIN cakes c ON c.id = o."cakeId"
+      JOIN cakes c ON c.id = o."cakeid"
       WHERE cl.id = $1;
       `, [id]);
 
