@@ -4,10 +4,12 @@ export async function postClient(req, res) {
    const { name, address, phone } = req.body;
 
    try {
-      await db.query(`
+      await db.query(
+         `
       INSERT INTO clients (name, address, phone)
       VALUES ($1, $2, $3);
-      `, [name, address, phone]
+      `,
+         [name, address, phone]
       );
 
       res.sendStatus(201);
@@ -17,9 +19,6 @@ export async function postClient(req, res) {
 }
 
 export async function getClients(req, res) {
-    // const duplicateCake = await db.query('SELECT id FROM cakes WHERE "name" = $1', [name]);
-    // if (duplicateCake.rowCount !== 0) return res.sendStatus(409);
-
    try {
       const data = await db.query(`SELECT * FROM clients`);
       res.status(201).send(data.rows);
@@ -28,9 +27,28 @@ export async function getClients(req, res) {
    }
 }
 
-// query para retornar o nome das colunas da tabela
-// db.query(`
-//   SELECT column_name, data_type, character_maximum_length
-//   FROM information_schema.columns
-//   WHERE table_name = 'orders';
-//   `);
+export async function getClientsById(req, res) {
+   const { id } = req.params;
+
+   try {
+      const clientExists = await db.query('SELECT id FROM clients WHERE "id" = $1', [clientId]);
+      if (clientExists.rowCount === 0) return res.status(404).send("Cliente não encontrado");
+
+      const data = await db.query(`
+      SELECT  o.id,
+            o."createdAt",
+            o.quantity, 
+            o."totalPrice",
+            o."isDelivered",
+            c.name "cakeName"
+      FROM clients cl 
+      JOIN orders o ON o."clientid" = cl.id
+      JOIN cakes c ON c.id = o."cakeId"
+      WHERE cl.id = $1;
+      `, [id]);
+
+      res.status(200).send(data.rows);
+   } catch (error) {
+      res.status(500).send(`Internal Server Error! ${error.message}`);
+   }
+}
